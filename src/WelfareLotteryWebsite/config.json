@@ -1,0 +1,10 @@
+﻿{
+  "AppSettings": {
+    "SiteTitle": "WelfareLotteryWebsite"
+  },
+  "Data": {
+    "DefaultConnection": {
+      "ConnectionString": "Server=.;Database=WelfareLottery;Trusted_Connection=True;MultipleActiveResultSets=true;pwd=5012;Pooling=true;"
+    }
+  }
+}
