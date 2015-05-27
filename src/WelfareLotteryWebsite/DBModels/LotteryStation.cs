@@ -53,7 +53,16 @@ namespace WelfareLotteryWebsite.DBModels
         /// <summary>
         /// 店面类型
         /// </summary>
-        public virtual StationManageType ManageType { get; set; }
+        //public virtual StationManageType ManageType { get; set; } 因店面还有一个子集 子集是不确定的 所以用到下面这两个
+        public string ManageTypeName { get; set; }
+        /// <summary>
+        /// 所选店面类型对应子集
+        /// </summary>
+        public List<string> ManageTypeProgenyList { get; set; }
+        public string ManageTypeProgencyListSerialized {
+            get { return JsonConvert.SerializeObject(ManageTypeProgenyList);}
+            set { ManageTypeProgenyList = JsonConvert.DeserializeObject<List<string>>(value); }
+        }
         /// <summary>
         /// 机主姓名
         /// </summary>
@@ -91,9 +100,13 @@ namespace WelfareLotteryWebsite.DBModels
         /// </summary>
         public virtual List<Salesclerk> SalesmanList { get; set; }
         /// <summary>
-        /// 福彩游戏类型
+        /// 福彩游戏类型Id
         /// </summary>
-        public virtual WelfareLotteryGameType WelfareGameType { get; set; }
+        public List<string> WelfareGameTypeList { get; set; }
+        public string WelfareGameTypeListSerialized {
+            get { return JsonConvert.SerializeObject(WelfareGameTypeList); }
+            set { WelfareGameTypeList = JsonConvert.DeserializeObject<List<string>>(value); }
+        }
         /// <summary>
         /// 店面经营使用面积
         /// </summary>
@@ -121,11 +134,11 @@ namespace WelfareLotteryWebsite.DBModels
         /// <summary>
         /// 即开奖励卡
         /// </summary>
-        public virtual RewardCardInfo RewardCard { get; set; }
+        public virtual List<RewardCardInfo> RewardCardInfos { get; set; }
         /// <summary>
         /// 网点变更信息
         /// </summary>
-        public virtual StationModifiedInfo ModifiedInfo { get; set; }
+        public virtual List<StationModifiedInfo> ModifiedInfos { get; set; }
         /// <summary>
         /// 网站照片 [可按网点编号新建文件夹 在其下面存放它的照片]
         /// </summary>
