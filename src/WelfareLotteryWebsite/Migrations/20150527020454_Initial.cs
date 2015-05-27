@@ -22,20 +22,6 @@ namespace WelfareLotteryWebsite.Migrations
                     table.PrimaryKey("PK_Administrator", x => x.Id);
                 });
             migration.CreateTable(
-                name: "RewardCardInfo",
-                columns: table => new
-                {
-                    CardIdentityNo = table.Column(type: "nvarchar(max)", nullable: true),
-                    CardName = table.Column(type: "nvarchar(max)", nullable: true),
-                    CardNum = table.Column(type: "nvarchar(max)", nullable: true),
-                    Id = table.Column(type: "int", nullable: false)
-                        .Annotation("SqlServer:ValueGeneration", "Identity")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RewardCardInfo", x => x.Id);
-                });
-            migration.CreateTable(
                 name: "SportLotteryGameType",
                 columns: table => new
                 {
@@ -121,25 +107,6 @@ namespace WelfareLotteryWebsite.Migrations
                         referencedColumn: "Id");
                 });
             migration.CreateTable(
-                name: "StationModifiedInfo",
-                columns: table => new
-                {
-                    Id = table.Column(type: "int", nullable: false)
-                        .Annotation("SqlServer:ValueGeneration", "Identity"),
-                    Memo = table.Column(type: "nvarchar(max)", nullable: true),
-                    ModifiedTime = table.Column(type: "datetime2", nullable: false),
-                    ModifiedTypeId = table.Column(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_StationModifiedInfo", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_StationModifiedInfo_StationModifiedType_ModifiedTypeId",
-                        columns: x => x.ModifiedTypeId,
-                        referencedTable: "StationModifiedType",
-                        referencedColumn: "Id");
-                });
-            migration.CreateTable(
                 name: "LotteryStation",
                 columns: table => new
                 {
@@ -159,13 +126,12 @@ namespace WelfareLotteryWebsite.Migrations
                     Id = table.Column(type: "int", nullable: false)
                         .Annotation("SqlServer:ValueGeneration", "Identity"),
                     MachineType = table.Column(type: "bit", nullable: false),
-                    ManageTypeId = table.Column(type: "int", nullable: true),
-                    ModifiedInfoId = table.Column(type: "int", nullable: true),
+                    ManageTypeName = table.Column(type: "nvarchar(max)", nullable: true),
+                    ManageTypeProgencyListSerialized = table.Column(type: "nvarchar(max)", nullable: true),
                     PropertyRight = table.Column(type: "bit", nullable: false),
                     RegionId = table.Column(type: "int", nullable: true),
                     RelatedPhoneNetNum = table.Column(type: "nvarchar(max)", nullable: true),
                     RentDiscount = table.Column(type: "nvarchar(max)", nullable: true),
-                    RewardCardId = table.Column(type: "int", nullable: true),
                     SportLotteryInfoId = table.Column(type: "int", nullable: true),
                     StationCode = table.Column(type: "nvarchar(max)", nullable: true),
                     StationPhoneNo = table.Column(type: "nvarchar(max)", nullable: true),
@@ -174,7 +140,7 @@ namespace WelfareLotteryWebsite.Migrations
                     StationTarget = table.Column(type: "nvarchar(max)", nullable: true),
                     UsableArea = table.Column(type: "nvarchar(max)", nullable: true),
                     Violation = table.Column(type: "nvarchar(max)", nullable: true),
-                    WelfareGameTypeId = table.Column(type: "int", nullable: true)
+                    WelfareGameTypeListSerialized = table.Column(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -185,34 +151,34 @@ namespace WelfareLotteryWebsite.Migrations
                         referencedTable: "Administrator",
                         referencedColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_LotteryStation_StationManageType_ManageTypeId",
-                        columns: x => x.ManageTypeId,
-                        referencedTable: "StationManageType",
-                        referencedColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_LotteryStation_StationModifiedInfo_ModifiedInfoId",
-                        columns: x => x.ModifiedInfoId,
-                        referencedTable: "StationModifiedInfo",
-                        referencedColumn: "Id");
-                    table.ForeignKey(
                         name: "FK_LotteryStation_StationRegion_RegionId",
                         columns: x => x.RegionId,
                         referencedTable: "StationRegion",
-                        referencedColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_LotteryStation_RewardCardInfo_RewardCardId",
-                        columns: x => x.RewardCardId,
-                        referencedTable: "RewardCardInfo",
                         referencedColumn: "Id");
                     table.ForeignKey(
                         name: "FK_LotteryStation_SportLottery_SportLotteryInfoId",
                         columns: x => x.SportLotteryInfoId,
                         referencedTable: "SportLottery",
                         referencedColumn: "Id");
+                });
+            migration.CreateTable(
+                name: "RewardCardInfo",
+                columns: table => new
+                {
+                    CardIdentityNo = table.Column(type: "nvarchar(max)", nullable: true),
+                    CardName = table.Column(type: "nvarchar(max)", nullable: true),
+                    CardNum = table.Column(type: "nvarchar(max)", nullable: true),
+                    Id = table.Column(type: "int", nullable: false)
+                        .Annotation("SqlServer:ValueGeneration", "Identity"),
+                    LotteryStationId = table.Column(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RewardCardInfo", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_LotteryStation_WelfareLotteryGameType_WelfareGameTypeId",
-                        columns: x => x.WelfareGameTypeId,
-                        referencedTable: "WelfareLotteryGameType",
+                        name: "FK_RewardCardInfo_LotteryStation_LotteryStationId",
+                        columns: x => x.LotteryStationId,
+                        referencedTable: "LotteryStation",
                         referencedColumn: "Id");
                 });
             migration.CreateTable(
@@ -235,6 +201,31 @@ namespace WelfareLotteryWebsite.Migrations
                         name: "FK_Salesclerk_LotteryStation_LotteryStationId",
                         columns: x => x.LotteryStationId,
                         referencedTable: "LotteryStation",
+                        referencedColumn: "Id");
+                });
+            migration.CreateTable(
+                name: "StationModifiedInfo",
+                columns: table => new
+                {
+                    Id = table.Column(type: "int", nullable: false)
+                        .Annotation("SqlServer:ValueGeneration", "Identity"),
+                    LotteryStationId = table.Column(type: "int", nullable: true),
+                    Memo = table.Column(type: "nvarchar(max)", nullable: true),
+                    ModifiedTime = table.Column(type: "datetime2", nullable: false),
+                    ModifiedTypeId = table.Column(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StationModifiedInfo", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StationModifiedInfo_LotteryStation_LotteryStationId",
+                        columns: x => x.LotteryStationId,
+                        referencedTable: "LotteryStation",
+                        referencedColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_StationModifiedInfo_StationModifiedType_ModifiedTypeId",
+                        columns: x => x.ModifiedTypeId,
+                        referencedTable: "StationModifiedType",
                         referencedColumn: "Id");
                 });
         }

@@ -12,7 +12,7 @@ namespace WelfareLotteryWebsite.Migrations
     {
         public override string Id
         {
-            get { return "20150526074642_Initial"; }
+            get { return "20150527020454_Initial"; }
         }
         
         public override string ProductVersion
@@ -147,44 +147,38 @@ namespace WelfareLotteryWebsite.Migrations
                             .Annotation("SqlServer:ValueGeneration", "Default");
                         b.Property<bool>("MachineType")
                             .Annotation("OriginalValueIndex", 14);
-                        b.Property<int?>("ManageTypeId")
-                            .Annotation("OriginalValueIndex", 15)
-                            .Annotation("ShadowIndex", 1);
-                        b.Property<int?>("ModifiedInfoId")
-                            .Annotation("OriginalValueIndex", 16)
-                            .Annotation("ShadowIndex", 2);
+                        b.Property<string>("ManageTypeName")
+                            .Annotation("OriginalValueIndex", 15);
+                        b.Property<string>("ManageTypeProgencyListSerialized")
+                            .Annotation("OriginalValueIndex", 16);
                         b.Property<bool>("PropertyRight")
                             .Annotation("OriginalValueIndex", 17);
                         b.Property<int?>("RegionId")
                             .Annotation("OriginalValueIndex", 18)
-                            .Annotation("ShadowIndex", 3);
+                            .Annotation("ShadowIndex", 1);
                         b.Property<string>("RelatedPhoneNetNum")
                             .Annotation("OriginalValueIndex", 19);
                         b.Property<string>("RentDiscount")
                             .Annotation("OriginalValueIndex", 20);
-                        b.Property<int?>("RewardCardId")
-                            .Annotation("OriginalValueIndex", 21)
-                            .Annotation("ShadowIndex", 4);
                         b.Property<int?>("SportLotteryInfoId")
-                            .Annotation("OriginalValueIndex", 22)
-                            .Annotation("ShadowIndex", 5);
+                            .Annotation("OriginalValueIndex", 21)
+                            .Annotation("ShadowIndex", 2);
                         b.Property<string>("StationCode")
-                            .Annotation("OriginalValueIndex", 23);
+                            .Annotation("OriginalValueIndex", 22);
                         b.Property<string>("StationPhoneNo")
-                            .Annotation("OriginalValueIndex", 24);
+                            .Annotation("OriginalValueIndex", 23);
                         b.Property<string>("StationPicListSerialized")
-                            .Annotation("OriginalValueIndex", 25);
+                            .Annotation("OriginalValueIndex", 24);
                         b.Property<string>("StationSpecificAddress")
-                            .Annotation("OriginalValueIndex", 26);
+                            .Annotation("OriginalValueIndex", 25);
                         b.Property<string>("StationTarget")
-                            .Annotation("OriginalValueIndex", 27);
+                            .Annotation("OriginalValueIndex", 26);
                         b.Property<string>("UsableArea")
-                            .Annotation("OriginalValueIndex", 28);
+                            .Annotation("OriginalValueIndex", 27);
                         b.Property<string>("Violation")
+                            .Annotation("OriginalValueIndex", 28);
+                        b.Property<string>("WelfareGameTypeListSerialized")
                             .Annotation("OriginalValueIndex", 29);
-                        b.Property<int?>("WelfareGameTypeId")
-                            .Annotation("OriginalValueIndex", 30)
-                            .Annotation("ShadowIndex", 6);
                         b.Key("Id");
                     });
                 
@@ -200,6 +194,9 @@ namespace WelfareLotteryWebsite.Migrations
                             .GenerateValueOnAdd()
                             .Annotation("OriginalValueIndex", 3)
                             .Annotation("SqlServer:ValueGeneration", "Default");
+                        b.Property<int?>("LotteryStationId")
+                            .Annotation("OriginalValueIndex", 4)
+                            .Annotation("ShadowIndex", 0);
                         b.Key("Id");
                     });
                 
@@ -279,13 +276,16 @@ namespace WelfareLotteryWebsite.Migrations
                             .GenerateValueOnAdd()
                             .Annotation("OriginalValueIndex", 0)
                             .Annotation("SqlServer:ValueGeneration", "Default");
-                        b.Property<string>("Memo")
-                            .Annotation("OriginalValueIndex", 1);
-                        b.Property<DateTime>("ModifiedTime")
-                            .Annotation("OriginalValueIndex", 2);
-                        b.Property<int?>("ModifiedTypeId")
-                            .Annotation("OriginalValueIndex", 3)
+                        b.Property<int?>("LotteryStationId")
+                            .Annotation("OriginalValueIndex", 1)
                             .Annotation("ShadowIndex", 0);
+                        b.Property<string>("Memo")
+                            .Annotation("OriginalValueIndex", 2);
+                        b.Property<DateTime>("ModifiedTime")
+                            .Annotation("OriginalValueIndex", 3);
+                        b.Property<int?>("ModifiedTypeId")
+                            .Annotation("OriginalValueIndex", 4)
+                            .Annotation("ShadowIndex", 1);
                         b.Key("Id");
                     });
                 
@@ -386,12 +386,13 @@ namespace WelfareLotteryWebsite.Migrations
                 builder.Entity("WelfareLotteryWebsite.DBModels.LotteryStation", b =>
                     {
                         b.ForeignKey("WelfareLotteryWebsite.DBModels.Administrator", "AdminId");
-                        b.ForeignKey("WelfareLotteryWebsite.DBModels.StationManageType", "ManageTypeId");
-                        b.ForeignKey("WelfareLotteryWebsite.DBModels.StationModifiedInfo", "ModifiedInfoId");
                         b.ForeignKey("WelfareLotteryWebsite.DBModels.StationRegion", "RegionId");
-                        b.ForeignKey("WelfareLotteryWebsite.DBModels.RewardCardInfo", "RewardCardId");
                         b.ForeignKey("WelfareLotteryWebsite.DBModels.SportLottery", "SportLotteryInfoId");
-                        b.ForeignKey("WelfareLotteryWebsite.DBModels.WelfareLotteryGameType", "WelfareGameTypeId");
+                    });
+                
+                builder.Entity("WelfareLotteryWebsite.DBModels.RewardCardInfo", b =>
+                    {
+                        b.ForeignKey("WelfareLotteryWebsite.DBModels.LotteryStation", "LotteryStationId");
                     });
                 
                 builder.Entity("WelfareLotteryWebsite.DBModels.Salesclerk", b =>
@@ -406,6 +407,7 @@ namespace WelfareLotteryWebsite.Migrations
                 
                 builder.Entity("WelfareLotteryWebsite.DBModels.StationModifiedInfo", b =>
                     {
+                        b.ForeignKey("WelfareLotteryWebsite.DBModels.LotteryStation", "LotteryStationId");
                         b.ForeignKey("WelfareLotteryWebsite.DBModels.StationModifiedType", "ModifiedTypeId");
                     });
                 
