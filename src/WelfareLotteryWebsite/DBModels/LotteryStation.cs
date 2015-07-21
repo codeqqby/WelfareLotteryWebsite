@@ -240,7 +240,7 @@ namespace WelfareLotteryWebsite.DBModels
         /// </summary>
         public string CardNum { get; set; }
     }
-
+    
     /// <summary>
     /// 网点变更信息
     /// </summary>
@@ -382,4 +382,36 @@ namespace WelfareLotteryWebsite.DBModels
         /// </summary>
         public string IdentityAddress { get; set; }
     }
+
+    public class Logs
+    {
+        public int Id { get; set; }
+        /// <summary>
+        /// 用户Guid
+        /// </summary>
+        public string UGuid { get; set; }
+        /// <summary>
+        /// 用户名
+        /// </summary>
+        public string Username { get; set; }
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Memo { get; set; }
+        /// <summary>
+        /// 操作类型
+        /// </summary>
+        public OptType OptType { get; set; }
+        /// <summary>
+        /// 操作时间
+        /// </summary>
+        public DateTime OptTime { get; set; }
+    }
+
+    public enum OptType
+    {
+        新增,
+        修改,
+        删除
+    };
 }

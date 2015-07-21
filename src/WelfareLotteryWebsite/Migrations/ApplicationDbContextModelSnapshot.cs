@@ -102,6 +102,25 @@ namespace WelfareLotteryWebsite.Migrations
                         b.Key("Id");
                     });
                 
+                builder.Entity("WelfareLotteryWebsite.DBModels.Logs", b =>
+                    {
+                        b.Property<int>("Id")
+                            .GenerateValueOnAdd()
+                            .Annotation("OriginalValueIndex", 0)
+                            .Annotation("SqlServer:ValueGeneration", "Default");
+                        b.Property<string>("Memo")
+                            .Annotation("OriginalValueIndex", 1);
+                        b.Property<DateTime>("OptTime")
+                            .Annotation("OriginalValueIndex", 2);
+                        b.Property<int>("OptType")
+                            .Annotation("OriginalValueIndex", 3);
+                        b.Property<string>("UGuid")
+                            .Annotation("OriginalValueIndex", 4);
+                        b.Property<string>("Username")
+                            .Annotation("OriginalValueIndex", 5);
+                        b.Key("Id");
+                    });
+                
                 builder.Entity("WelfareLotteryWebsite.DBModels.LotteryStation", b =>
                     {
                         b.Property<int?>("AdminId")

@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.Data.Entity;
-using Microsoft.Data.Entity.Metadata;
-using Microsoft.Framework.OptionsModel;
-using WelfareLotteryWebsite.DBModels;
 using Microsoft.Framework.ConfigurationModel;
+using WelfareLotteryWebsite.DBModels;
 
 namespace WelfareLotteryWebsite.Models
 {
@@ -61,7 +56,10 @@ namespace WelfareLotteryWebsite.Models
         /// 销售员信息
         /// </summary>
         public DbSet<Salesclerk> Salesclerks { get; set; }
-
+        /// <summary>
+        /// 操作日志
+        /// </summary>
+        public DbSet<Logs> Logses { get; set; }
 
         public ApplicationDbContext()
         {
@@ -71,14 +69,21 @@ namespace WelfareLotteryWebsite.Models
                 _configuration.AddJsonFile("config.json");
                 Database.AsRelational().ApplyMigrations();
                 _created = true;
-                
+                AddUserAndRoles();
             }
         }
 
         private readonly Configuration _configuration = new Configuration();
+        private string connectionString= null;
+        public string outConnectionString = null;
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(_configuration["Data:DefaultConnection:ConnectionString"]);
+            if (!optionsBuilder.IsConfigured)
+            {
+                connectionString =( connectionString?? _configuration["Data:DefaultConnection:ConnectionString"])??outConnectionString;
+                if (connectionString != null)
+                    optionsBuilder.UseSqlServer(connectionString);
+            }
 
             base.OnConfiguring(optionsBuilder);
         }
@@ -89,6 +94,83 @@ namespace WelfareLotteryWebsite.Models
             // Customize the ASP.NET Identity model and override the defaults if needed.
             // For example, you can rename the ASP.NET Identity table names and more.
             // Add your customizations after calling base.OnModelCreating(builder);
+        }
+
+        /// <summary>
+        /// 创建默角色和一个管理员帐号
+        /// </summary>
+        /// <returns></returns>
+        void AddUserAndRoles()
+        {
+            bool success = false;
+            var idManager = new IdentityManager();
+
+            if (!idManager.RoleExistsAsync("Admin").Result)
+            {
+                success = idManager.CreateRoleAsync("Admin").Result;
+            }
+            if (!idManager.RoleExistsAsync("Operator").Result)
+            {
+                success = idManager.CreateRoleAsync("Operator").Result;
+            }
+            if (!idManager.RoleExistsAsync("Member").Result)
+            {
+                success = idManager.CreateRoleAsync("Member").Result;
+            }
+
+            if (!idManager.UserExistsAsync("admin").Result)
+            {
+                var newUser = new ApplicationUser()
+                {
+                    UserName = "admin",
+                    Email = "admin@admin.com"
+                };
+                success = idManager.CreateUserAsync(newUser, "admin").Result;
+                success = idManager.AddUserToRoleAsync(newUser, "Admin").Result;
+            }
+        }
+    }
+
+    public class IdentityManager
+    {
+        // 判断角色是否已在存在
+        public async Task<bool> RoleExistsAsync(string name)
+        {
+            var rm = new RoleManager<IdentityRole>(new RoleStore<IdentityRole>(new ApplicationDbContext()), null, null,
+                null, null, null);
+            return await rm.RoleExistsAsync(name);
+        }
+
+        // 新增角色
+        public async Task<bool> CreateRoleAsync(string name)
+        {
+            var rm = new RoleManager<IdentityRole>(new RoleStore<IdentityRole>(new ApplicationDbContext()), null, null,
+                null, null, null);
+            IdentityResult idResult = await rm.CreateAsync(new IdentityRole(name));
+            return idResult.Succeeded;
+        }
+
+        //是否有此用户
+        public async Task<bool> UserExistsAsync(string name)
+        {
+            var um = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(new ApplicationDbContext()),null,new PasswordHasher<ApplicationUser>(),null,null,null, null, null, null, null);
+            return await um.FindByNameAsync(name) != null;
+        }
+        
+        // 新增角色
+        public async Task<bool> CreateUserAsync(ApplicationUser user, string pass)
+        {
+            var um = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(new ApplicationDbContext()), null, new PasswordHasher<ApplicationUser>(), null, null, null, null, null, null, null);
+            var idResult = await um.CreateAsync(user, pass);
+            return idResult.Succeeded;
+        } 
+
+        // 将使用者加入角
+        public async Task<bool> AddUserToRoleAsync(ApplicationUser user, string roleName)
+        {
+            var um = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(new ApplicationDbContext()), null, new PasswordHasher<ApplicationUser>(), null, null, null, null, null, null, null);
+            var idResult = await um.AddToRoleAsync(user, roleName);
+            return idResult.Succeeded;
         }
     }
 }
