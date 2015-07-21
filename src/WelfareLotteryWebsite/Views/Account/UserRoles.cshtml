@@ -1,0 +1,80 @@
+﻿@model WelfareLotteryWebsite.Models.SelectUserRolesViewModel
+@{
+    ViewBag.Title = "使用者角色";
+}
+<h2>使用者角色 @Html.DisplayFor(model => model.UserName)</h2>
+<hr />
+@if ("add" == ViewBag.Opt)
+{
+    using (Html.BeginForm("AddUserRoles", "Account", FormMethod.Post, new { encType = "multipart/form-data", name = "myform" }))
+    {
+        @Html.AntiForgeryToken()
+        <div class="form-horizontal">
+            @Html.ValidationSummary(true)
+            <div class="form-group">
+                <div class="col-md-10">
+                    @Html.HiddenFor(model => model.Id)
+                </div>
+            </div>
+            <h4>选择要加入的角色</h4>
+            <br />
+            <hr />
+            <table>
+                <tr>
+                    <th>
+                        勾选
+                    </th>
+                    <th>
+                        角色
+                    </th>
+                </tr>
+                @Html.EditorFor(model => model.Roles)
+                @*添加角色时已经选中的不能再勾选*@
+
+            </table>
+            <br />
+            <hr />
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-10">
+                    <input type="submit" value="保存" class="btn btn-default" />
+                </div>
+            </div>
+        </div>
+    }
+}
+else if ("del" == ViewBag.Opt)
+{
+    using (Html.BeginForm("DelUserRoles", "Account", FormMethod.Post, new { encType = "multipart/form-data", name = "myform" }))
+    {
+        @Html.AntiForgeryToken()
+        <div class="form-horizontal">
+            @Html.ValidationSummary(true)
+            <div class="form-group">
+                <div class="col-md-10">
+                    @Html.HiddenFor(model => model.Id)
+                </div>
+            </div>
+            <h4>选择要删减的角色</h4>
+            <br />
+            <hr />
+            <table>
+                <tr>
+                    <th>
+                        勾选                   
+                        角色
+                    </th>
+                </tr>
+                <tr><td>@Html.EditorFor(model => model.Roles)</td></tr>
+</table>@*删减角色时没有选中的不能再勾选*@
+            <br />
+            <hr />
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-10">
+                    <input type="submit" value="保存" class="btn btn-default"/>
+                </div>
+            </div>
+        </div>
+    }
+}
+<a asp-action="RegisteredUsers">返回帐号管理列表</a>
+

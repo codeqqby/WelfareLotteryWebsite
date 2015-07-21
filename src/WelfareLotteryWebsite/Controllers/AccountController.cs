@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System.Security.Principal;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Authentication;
 using Microsoft.AspNet.Authorization;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Mvc;
 using Microsoft.AspNet.Mvc.Rendering;
-using WelfareLotteryWebsite;
+using Microsoft.Framework.ConfigurationModel;
 using WelfareLotteryWebsite.Models;
 
 namespace WelfareLotteryWebsite.Controllers
@@ -17,15 +15,203 @@ namespace WelfareLotteryWebsite.Controllers
     [Authorize]
     public class AccountController : Controller
     {
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,IConfiguration config)
         {
             UserManager = userManager;
             SignInManager = signInManager;
+            _config = config;
         }
 
+        private readonly IConfiguration _config;
         public UserManager<ApplicationUser> UserManager { get; private set; }
 
         public SignInManager<ApplicationUser> SignInManager { get; private set; }
+
+        #region 对帐户和角色进行操作
+        [Authorize(Roles = "Admin")]
+        public IActionResult RegisteredUsers()
+        {
+            if (ModelState.IsValid)
+            {
+                var allUsers = this.UserManager.Users;
+                List<EditUserViewModel> userResult = new List<EditUserViewModel>();
+                foreach (var item in allUsers)
+                {
+                    userResult.Add(new EditUserViewModel(item));
+                }
+
+                var result=userResult.Find(u => u.UserName == "admin");
+
+                userResult.Remove(result);
+                userResult.Insert(0,result);
+
+                return View(userResult);
+            }
+            return View();
+        }
+        public async Task<IActionResult> Edit(string id = null)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return RedirectToAction("RegisteredUsers", "Account");
+            }
+            return View(new EditUserViewModel(await UserManager.FindByIdAsync(id)));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditUser(EditUserViewModel editUser)
+        {
+            if (ModelState.IsValid)
+            {
+                ApplicationUser user = await UserManager.FindByIdAsync(editUser.Id);
+                user.UserName = editUser.UserName;
+                user.PhoneNumber = editUser.PhoneNumber;
+                user.Email = editUser.Email;
+
+                IdentityResult result = await UserManager.UpdateAsync(user);
+
+                if (!result.Succeeded)
+                {
+                    AddErrors(result);
+                    return View("Edit"); //记得返回错误信息
+                }
+            }
+            return RedirectToAction("RegisteredUsers", "Account");
+        }
+
+        public async Task<IActionResult> UserRoles(string id, string opt)
+        {
+            if (string.IsNullOrEmpty(opt)) return RedirectToAction("RegisteredUsers", "Account");
+            ViewBag.Opt = opt;
+            return View(new SelectUserRolesViewModel(await UserManager.FindByIdAsync(id), _config["Data:DefaultConnection:ConnectionString"]));
+        }
+
+        public async Task<IActionResult> AddUserRoles(SelectUserRolesViewModel userRole)
+        {
+            if (ModelState.IsValid)
+            {
+                List<string> selectedList = new List<string>();
+                userRole.Roles.FindAll(p => p.Selected).ForEach(p => selectedList.Add(p.RoleName));
+
+                foreach (var item in selectedList)
+                {
+                    ApplicationUser user = await UserManager.FindByIdAsync(userRole.Id);
+                    //如这个用户不在这个角色里 则修改
+                    if (!await UserManager.IsInRoleAsync(user, item))
+                    {
+                        IdentityResult result = await UserManager.AddToRoleAsync(user, item);
+                        if (!result.Succeeded)
+                        {
+                            AddErrors(result);
+                        }
+                    }
+                }
+            }
+            return RedirectToAction("RegisteredUsers", "Account");
+        }
+
+        public async Task<IActionResult> DelUserRoles(SelectUserRolesViewModel userRole)
+        {
+            if (ModelState.IsValid)
+            {
+                List<string> unselectedList = new List<string>();
+                userRole.Roles.FindAll(p => !p.Selected).ForEach(p => unselectedList.Add(p.RoleName));
+
+                foreach (var item in unselectedList)
+                {
+                    ApplicationUser user = await UserManager.FindByIdAsync(userRole.Id);
+                    //如这个用户在这个角色里 则修改
+                    if (await UserManager.IsInRoleAsync(user, item))
+                    {
+                        IdentityResult result = await UserManager.RemoveFromRoleAsync(user, item);
+                        if (!result.Succeeded)
+                        {
+                            AddErrors(result);
+                        }
+                    }
+                }
+            }
+
+           
+
+            return RedirectToAction("RegisteredUsers", "Account");
+        }
+
+        public async Task<IActionResult> DeleteUser(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return RedirectToAction("RegisteredUsers", "Account");
+            }
+            var user =await UserManager.FindByIdAsync(id);
+            //删除用户前需删除他的角色 因在AspnetUserRoles表中有用户与角色的对应关系
+           var resultsss=await UserManager.RemoveFromRolesAsync(user, await UserManager.GetRolesAsync(user));
+            if (!resultsss.Succeeded) return RedirectToAction("RegisteredUsers", "Account");
+            IdentityResult result = await UserManager.DeleteAsync(user);
+            if (!result.Succeeded)
+            {
+                AddErrors(result);
+            }
+            return RedirectToAction("RegisteredUsers", "Account");
+        }
+
+        //
+        // GET: /Account/Register
+        [HttpGet]
+        //[AllowAnonymous]
+        [Authorize(Roles = "Admin")]
+        public IActionResult Register()
+        {
+            return View();
+        }
+
+        //
+        // POST: /Account/Register
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = new ApplicationUser { UserName = model.UserName, Email = model.Email,PhoneNumber = model.PhoneNumber};
+                var result = await UserManager.CreateAsync(user, model.Password);
+                if (result.Succeeded)
+                {
+                    var aaa=await UserManager.AddToRoleAsync(user, "Member");
+                    if (!aaa.Succeeded)
+                    {
+                        await UserManager.DeleteAsync(user);//如赋予角色没有成功，则将用户删除
+                    }
+
+                    // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=532713
+                    // Send an email with this link
+                    //var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
+                    //var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Context.Request.Scheme);
+                    //await MessageServices.SendEmailAsync(model.Email, "Confirm your account",
+                    //    "Please confirm your account by clicking this link: <a href=\"" + callbackUrl + "\">link</a>");
+                    
+                    //await SignInManager.SignInAsync(user, isPersistent: false);
+                    return RedirectToAction("RegisteredUsers", "Account");
+                }
+
+                foreach (var error in result.Errors)
+                {
+                    error.Description=error.Description.Replace("Passwords must have at least one uppercase ('A'-'Z').", "密码需要至少一位大写字母");
+                    error.Description=error.Description.Replace("Passwords must have at least one digit ('0'-'9').", "密码需要至少一位数字");
+                    error.Description=error.Description.Replace("Passwords must have at least one lowercase ('a'-'z').", "密码需要至少一位小写字母");
+                    error.Description = error.Description.Replace("Passwords must have at least one non letter and non digit character.", "密码需要一位不是字母或数字的字符");
+                    error.Description = error.Description.Replace("Please enter a valid email address.", "输入有效的电子邮箱地址");
+                }
+
+                AddErrors(result);
+            }
+
+            // If we got this far, something failed, redisplay form
+            return View(model);
+        }
+
+        #endregion
 
         //
         // GET: /Account/Login
@@ -49,7 +235,9 @@ namespace WelfareLotteryWebsite.Controllers
             {
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set shouldLockout: true
-                var result = await SignInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, shouldLockout: false);
+
+                //var result = await SignInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, shouldLockout: false);
+                var result = await SignInManager.PasswordSignInAsync(model.UserName, model.Password, model.RememberMe, shouldLockout: false);
                 if (result.Succeeded)
                 {
                     return RedirectToLocal(returnUrl);
@@ -58,10 +246,10 @@ namespace WelfareLotteryWebsite.Controllers
                 {
                     return RedirectToAction("SendCode", new { ReturnUrl = returnUrl, RememberMe = model.RememberMe });
                 }
-                if (result.IsLockedOut)
-                {
-                    return View("Lockout");
-                }
+                //if (result.IsLockedOut)
+               // {
+               //     return View("Lockout");
+               // }
                 else
                 {
                     ModelState.AddModelError(string.Empty, "Invalid login attempt.");
@@ -73,42 +261,46 @@ namespace WelfareLotteryWebsite.Controllers
             return View(model);
         }
 
-        //
-        // GET: /Account/Register
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult Register()
-        {
-            return View();
-        }
-
-        //
-        // POST: /Account/Register
         [HttpPost]
         [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModel model)
+        public async Task<JsonResult> Verify()
         {
-            if (ModelState.IsValid)
+            Dictionary<string, string> result = new Dictionary<string, string> { { "Errors","" }, { "Role","" }, { "Succeeded","" }, { "UGuid", "" } };
+            try
             {
-                var user = new ApplicationUser { UserName = model.Email, Email = model.Email};
-                var result = await UserManager.CreateAsync(user, model.Password);
-                if (result.Succeeded)
-                {
-                    // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=532713
-                    // Send an email with this link
-                    //var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
-                    //var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Context.Request.Scheme);
-                    //await MessageServices.SendEmailAsync(model.Email, "Confirm your account",
-                    //    "Please confirm your account by clicking this link: <a href=\"" + callbackUrl + "\">link</a>");
-                    await SignInManager.SignInAsync(user, isPersistent: false);
-                    return RedirectToAction("Index", "Home");
-                }
-                AddErrors(result);
-            }
+                string id = Request.Form["Id"];
+                string pass = Request.Form["pass"];
 
-            // If we got this far, something failed, redisplay form
-            return View(model);
+                ApplicationUser nameUsers = await UserManager.FindByNameAsync(id);
+                ApplicationUser emailUsers = await UserManager.FindByEmailAsync(id);
+
+                if (null == nameUsers && null == emailUsers)
+                {
+                    result["Errors"]="没有此用户";
+                    goto returnResult;
+                }
+                var n = await UserManager.IsInRoleAsync(nameUsers ?? emailUsers, "Admin");
+                if (n)
+                {
+                    result["Role"]= "Admin";
+                }
+                else
+                {
+                    var e = await UserManager.IsInRoleAsync(nameUsers ?? emailUsers, "Operator");
+                    result["Role"]= e ? "Operator" : "Member";
+                }
+
+                var login =await SignInManager.PasswordSignInAsync(nameUsers ?? emailUsers, pass, false, shouldLockout: false);
+                result["Succeeded"]= login.Succeeded ? "true" : "false";
+                result["UGuid"] = nameUsers == null ? emailUsers.Id : nameUsers.Id;
+            }
+            catch (Exception e)
+            {
+                result.Add("Errors", e.Message);
+            }
+            
+            returnResult:
+            return Json(result);
         }
 
         //

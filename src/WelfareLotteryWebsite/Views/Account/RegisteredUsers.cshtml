@@ -1,0 +1,106 @@
+﻿@using System.Threading.Tasks
+@model IEnumerable<WelfareLotteryWebsite.Models.EditUserViewModel>
+
+@{
+    ViewBag.Title = "账号管理";
+}
+<h2>账号管理</h2>
+<p>
+    @Html.ActionLink("新增账号", "Register", new { returnUrl = string.Format($"{Context.Request.Path}") })
+</p>
+
+<link href="~/lib/bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet" />
+
+<div class="row">
+    <div class="col-md-12">
+        <table class="table">
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.UserName)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.PhoneNumber)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Email)
+                </th>
+                <th></th>
+            </tr>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.UserName)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.PhoneNumber)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Email)
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            @if ("admin" != item.UserName)  //看是否有增加角色的需求  如有 则也需要为Admin增加其角色
+                            {
+                                @Html.ActionLink("编辑", "Edit", new { id = item.Id },new { @class = "btn btn-default" })
+                                @Html.ActionLink("增加角色", "UserRoles", new { id = item.Id, opt = "add" }, new { @class = "btn btn-default" })
+                                @Html.ActionLink("删减角色", "UserRoles", new { id = item.Id, opt = "del" }, new { @class = "btn btn-default" })
+                                @Html.ActionLink("删除", "DeleteUser", new { id = item.Id }, new { onclick = "return confirmDelete();", @class = "btn btn-default" })
+                            }
+                            </div>
+</td>
+                </tr>
+            }
+        </table>
+    </div>
+</div>
+
+@*<div id="dialog-confirm" title="Modal Dialog">
+    <p>
+        <span class="ui-icon ui-icon-circle-check" style="float:left; margin:0 7px 50px 0;"></span>
+        Your files have downloaded successfully into the My Downloads folder.
+    </p>
+    <p>
+        Currently using <b>36% of your storage space</b>.
+    </p>
+</div>
+      <a href="#" id="modal_link" class="ui-state-default ui-corner-all">
+    <span class="ui-icon ui-icon-newwin"></span>
+    打开模态对话框
+</a>*@
+
+@section scripts{
+    <script>
+        //$(function () {
+        //    $("#dialog-confirm").dialog({
+        //        autoOpen: false,
+        //        modal: true,
+        //        buttons: {
+        //            "Ok": function () {
+        //                $(this).dialog("close");
+        //            },
+        //            "Cancel": function () {
+        //                $(this).dialog("close");
+        //            }
+        //        }
+        //    });
+        //});
+
+        function confirmDelete() {
+
+                //return false;
+
+                return confirm("是否删除此用户?");
+            }
+        // Dialog message
+        //$("#dialog-message").dialog({
+        //    autoOpen: false,
+        //    modal: true,
+        //    buttons: {
+        //        Ok: function () {
+        //            $(this).dialog("close");
+        //        }
+        //    }
+        //});
+</script>
+    }
